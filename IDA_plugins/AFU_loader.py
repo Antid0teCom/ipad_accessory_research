@@ -139,6 +139,10 @@ def accept_file(li, filename):
 		device_type = "Smart Keyboard 9.7\""
 	elif product_id == 0x26B:
 		device_type = "Smart Keyboard 10.5\""
+	elif product_id == 0x292:
+		device_type = "Smart Keyboard Folio 11\""
+	elif product_id == 0x293:
+		device_type = "Smart Keyboard Folio 12.9\""
 	else:
 		# not supported at the moment
 		return 0
@@ -165,14 +169,25 @@ def load_file(li, neflags, format):
 
 	if product_id == 0x312: # Apple Pencil
 		fw_base = 0x8006080
+		msp_base = fw_base		
 	elif product_id == 0x268: # Smart Keyboard 12.9"
 		fw_base = 0x08002600
+		msp_base = fw_base
 	elif product_id == 0x26A: # Smart Keyboard 9.7"
-		fw_base = 0x08002600        # don't really know, haven't seen an OTA so far
+		fw_base = 0x08002600
+		msp_base = fw_base
 	elif product_id == 0x26B: # Smart Keyboard 10.5"
 		fw_base = 0x08002600        # don't really know, haven't seen an OTA so far
+		msp_base = fw_base
+	elif product_id == 0x292: # Smart Keyboard Folio 11"
+		fw_base = 0x08000980        # seems to work
+		msp_base = fw_base + 0x180
+	elif product_id == 0x293: # Smart Keyboard Folio 12.9"
+		fw_base = 0x08000980        # seems to work
+		msp_base = fw_base + 0x180
 	else:
 		return 0
+
 
 	li.file2base(0, fw_base-0x80, fw_base, 1)
 	li.file2base(0x80, fw_base, fw_base+fw_len, 1)
@@ -220,14 +235,14 @@ def load_file(li, neflags, format):
 
 	# check if __TEXT starts with an SRAM address
 	# this is the initial MSP that is followed by exception vectors
-	initMSP = idc.Dword(fw_base)
+	initMSP = idc.Dword(msp_base)
 	print "initMSP 0x%x" % initMSP
 	if (initMSP >= SRAM_BASE) and initMSP <= (SRAM_BASE+SRAM_SIZE):
 		
-		idc.set_name(fw_base, "init_MSP")
-		idc.create_dword(fw_base)
-		idc.op_plain_offset(fw_base, -1, 0)
-		idc.set_cmt(fw_base, "Initial MSP value", 0)
+		idc.set_name(msp_base, "init_MSP")
+		idc.create_dword(msp_base)
+		idc.op_plain_offset(msp_base, -1, 0)
+		idc.set_cmt(msp_base, "Initial MSP value", 0)
 		
 		# these are now the exception vectors
 		
@@ -238,7 +253,7 @@ def load_file(li, neflags, format):
 		multi = False
 		
 		while cnt < 255:
-			ptr = idc.Dword(fw_base + 4 + 4 * cnt)
+			ptr = idc.Dword(msp_base + 4 + 4 * cnt)
 			if ptr != 0:
 				
 				# must be inside __TEXT
@@ -249,10 +264,10 @@ def load_file(li, neflags, format):
 					break
 			
 			# convert into a dword + offset
-			idc.create_dword(fw_base + 4 + 4 * cnt)
+			idc.create_dword(msp_base + 4 + 4 * cnt)
 			if ptr != 0:
-				idc.op_offset(fw_base + 4 + 4 * cnt, 0, idc.REF_OFF32, -1, 0, 0)
-			idc.set_cmt(fw_base + 4 + 4 * cnt, "exception %d: %s" % (cnt + 1, exception_table[cnt + 1]), 0)
+				idc.op_offset(msp_base + 4 + 4 * cnt, 0, idc.REF_OFF32, -1, 0, 0)
+			idc.set_cmt(msp_base + 4 + 4 * cnt, "exception %d: %s" % (cnt + 1, exception_table[cnt + 1]), 0)
 			
 			# should only RESET vector be our entrypoint?
 			idc.add_entry(ptr & ~1, ptr & ~1, "", 1)
@@ -275,7 +290,7 @@ def load_file(li, neflags, format):
 		if cnt > 0:
 			i = 1
 			while i <= cnt:
-				ptr = idc.Dword(fw_base + 4 * i)
+				ptr = idc.Dword(msp_base + 4 * i)
 				
 				if ptr != 0:
 					# ensure this is 
@@ -287,6 +302,7 @@ def load_file(li, neflags, format):
 						
 				i += 1
 				
+	
 	
 
 	
