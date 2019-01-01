@@ -205,6 +205,9 @@ def check(filename):
         output(1, "[-] AFU for unknown product id 0x%x" % product_id)
         #return AFU_ERROR_INCOMPATIBLE_PRODUCT_ID
 
+    output(2, "[+] AFU Firmware Type: 0x%x" % fw_type)
+    output(2, "[+] AFU Harware Revision: %d" % hw_rev_id)
+
     if CRC == CRC_STANDARD:
         crc_algorithm = "standard"
     elif CRC == CRC_STM32:
@@ -288,6 +291,8 @@ def check(filename):
         modulus = modulus_type2
     else:
         output(1, "[-] AFU signature of unsupported type: %d" % sig_type)
+    
+    output(1, "[-] AFU signature type: %d" % sig_type)
     
     # now decrypt the signature
     decrypted_signature = modexp(signature, 0x10001, modulus)
