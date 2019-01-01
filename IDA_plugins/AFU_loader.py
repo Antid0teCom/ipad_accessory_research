@@ -127,10 +127,28 @@ def accept_file(li, filename):
 	if magic != 0xa2c7:
 		return 0
 		
+	# support multiple firmware types for Apple Pencil 2
+	if product_id == 0x14c:
+		device_type = "Apple Pencil 2"
+		if fw_type == 1:
+			device_type += " (stylus)"
+		elif fw_type == 0x50:
+			device_type += " (charger)"
+		elif fw_type == 0x20:
+			device_type += " (mt)"
+		elif fw_type == 0x30:
+			device_type += " (radio)"
+		elif fw_type == 0x60:
+			device_type += " (accel)"
+		else:
+			device_type += " (unknown)"
+
+		return {'format': "Accessory Firmware Update (%s)" % device_type, 'processor':'ARM'}
+
 	# check if firmware type is kAUTypeSTFW
 	if fw_type != 1:
 		return 0
-	
+
 	if product_id == 0x312:
 		device_type = "Apple Pencil"
 	elif product_id == 0x268:
@@ -170,6 +188,19 @@ def load_file(li, neflags, format):
 	if product_id == 0x312: # Apple Pencil
 		fw_base = 0x8006080
 		msp_base = fw_base		
+	elif product_id == 0x14c: # Apple Pencil 2
+		if fw_type == 1:
+			fw_base = 0x08000980
+			msp_base = fw_base + 0x180
+		if fw_type == 0x20:
+			fw_base = 0x0
+			msp_base = fw_base
+		if fw_type == 0x30:
+			fw_base = 0x0
+			msp_base = fw_base
+		if fw_type == 0x50:
+			fw_base = 0x08000000
+			msp_base = fw_base
 	elif product_id == 0x268: # Smart Keyboard 12.9"
 		fw_base = 0x08002600
 		msp_base = fw_base
@@ -188,32 +219,41 @@ def load_file(li, neflags, format):
 	else:
 		return 0
 
-
-	li.file2base(0, fw_base-0x80, fw_base, 1)
+	# for now a heuristic
+	show_header = True
+	if fw_type != 1 or fw_base == 0:
+		show_header = False
+	
+	if show_header:
+		li.file2base(0, fw_base-0x80, fw_base, 1)
 	li.file2base(0x80, fw_base, fw_base+fw_len, 1)
 		
-	idaapi.add_segm(0, fw_base-0x80, fw_base, "HEADER", "DATA")
+	if show_header:
+		idaapi.add_segm(0, fw_base-0x80, fw_base, "HEADER", "DATA")
 	idaapi.add_segm(0, fw_base, fw_base+fw_len, "__TEXT", "CODE")
 	idaapi.add_segm(0, 0xE000E000, 0xE000F000, "__SYSREG", "DATA")
 	idaapi.add_segm(0, SRAM_BASE, SRAM_BASE+SRAM_SIZE, "__SRAM", "DATA")
 
-	idc.split_sreg_range(fw_base-0x80, "T", 1)
+	if show_header:
+		idc.split_sreg_range(fw_base-0x80, "T", 1)
 	idc.split_sreg_range(fw_base, "T", 1)
 	
 	# register the structures
 	register_structs()
 	
 	# apply the structure
-	idc.set_name(fw_base - 0x80, "AFU_HEADER")
-	idc.create_struct(fw_base - 0x80, -1, "afu_full_header")
-	ida_nalt.unhide_item(fw_base - 0x80 + 1)
+	if show_header:
+		idc.set_name(fw_base - 0x80, "AFU_HEADER")
+		idc.create_struct(fw_base - 0x80, -1, "afu_full_header")
+		ida_nalt.unhide_item(fw_base - 0x80 + 1)
 	
 	# handle the digest and signature
 	
 	if sig_magic == 0x61E34724:
 		
 		# apply the structure
-		idc.set_name(fw_base - 0x80 + 0x20, "AFU_SIG_HEADER")
+		if show_header:
+			idc.set_name(fw_base - 0x80 + 0x20, "AFU_SIG_HEADER")
 		#idc.create_struct(fw_base - 0x80 + 0x20, -1, "afu_sig_header")
 		#ida_nalt.unhide_item(fw_base - 0x80 + 0x20 + 1)
 		
