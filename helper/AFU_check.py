@@ -189,6 +189,15 @@ def check(filename):
         output(1, "[+] AFU for Apple Pencil")
         CRC=CRC_STM32
         
+    elif product_id == 0x266:
+        
+        output(1, "[+] AFU for Sire Remote 1")        
+        CRC=CRC_STM32
+
+    elif product_id == 0x14c:
+        
+        output(1, "[+] AFU for Apple Pencil 2")        
+
     elif product_id == 0x268:
         
         output(1, "[+] AFU for Smart Keyboard 12.9\"")        
@@ -200,6 +209,18 @@ def check(filename):
     elif product_id == 0x26b:
         
         output(1, "[+] AFU for Smart Keyboard 10.5\"")        
+    
+    elif product_id == 0x26d:
+        
+        output(1, "[+] AFU for Siri Remote 2")        
+    
+    elif product_id == 0x292:
+        
+        output(1, "[+] AFU for Smart Keyboard Folio 11\"")        
+    
+    elif product_id == 0x293:
+        
+        output(1, "[+] AFU for Smart Keyboard Folio 12.9\"")        
     
     else:
         output(1, "[-] AFU for unknown product id 0x%x" % product_id)
