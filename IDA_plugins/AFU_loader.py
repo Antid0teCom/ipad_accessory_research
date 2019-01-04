@@ -126,7 +126,20 @@ def accept_file(li, filename):
 
 	if magic != 0xa2c7:
 		return 0
-		
+	
+	# support multiple firmware types for Siri Remote 2
+	if product_id == 0x26d:
+		device_type = "Siri Remote 2"
+		if fw_type == 1:
+			device_type += " (remote)"
+		elif fw_type == 0xb0:
+			device_type += " (bootloader)"
+		else:
+			device_type += " (unknown)"
+
+		return {'format': "Accessory Firmware Update (%s)" % device_type, 'processor':'ARM'}
+	
+	
 	# support multiple firmware types for Apple Pencil 2
 	if product_id == 0x14c:
 		device_type = "Apple Pencil 2"
@@ -201,6 +214,13 @@ def load_file(li, neflags, format):
 		if fw_type == 0x50:
 			fw_base = 0x08000000
 			msp_base = fw_base
+	elif product_id == 0x26d: # Siri Remote 2
+		if fw_type == 1:
+			fw_base = 0x8008080
+			msp_base = fw_base + 0x180
+		if fw_type == 0xb0:
+			fw_base = 0x280
+			msp_base = fw_base + 0x180
 	elif product_id == 0x268: # Smart Keyboard 12.9"
 		fw_base = 0x08002600
 		msp_base = fw_base
