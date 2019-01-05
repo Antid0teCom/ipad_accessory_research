@@ -151,7 +151,33 @@ def output(level, output_str):
     
     if level >= output_level:
         print "%s" % output_str
+
+firmwaretypes = {}
+firmwaretypes[0xc0] = "KeyCal"
+firmwaretypes[0xc1] = "MTCal"
+firmwaretypes[0xc2] = "ForceCal"
+firmwaretypes[0xc3] = "ActCal"
+firmwaretypes[0xc4] = "AccelCal"
+firmwaretypes[0xc5] = "AudioCal"
+firmwaretypes[0xa0] = "VibeWaveform"
+firmwaretypes[0xb0] = "BootLoader"
+firmwaretypes[0x20] = "MTFW"
+firmwaretypes[0x30] = "RadioFW"
+firmwaretypes[0x01] = "STFW"
+firmwaretypes[0x31] = "RadioDiags"
+firmwaretypes[0x40] = "AudioFW"
+firmwaretypes[0x41] = "AudioCalFW"
+firmwaretypes[0x50] = "ChargerFW"
+firmwaretypes[0x60] = "AccelAlgs"
+
+
+def firmwaretype(type):
     
+    global firmwaretypes
+    
+    if firmwaretypes.has_key(type):
+        return firmwaretypes[type]
+    return "unknown"
 
 def check(filename):
     
@@ -226,7 +252,7 @@ def check(filename):
         output(1, "[-] AFU for unknown product id 0x%x" % product_id)
         #return AFU_ERROR_INCOMPATIBLE_PRODUCT_ID
 
-    output(2, "[+] AFU Firmware Type: 0x%x" % fw_type)
+    output(2, "[+] AFU Firmware Type: 0x%x (%s)" % (fw_type, firmwaretype(fw_type)))
     output(2, "[+] AFU Harware Revision: %d" % hw_rev_id)
 
     if CRC == CRC_STANDARD:
