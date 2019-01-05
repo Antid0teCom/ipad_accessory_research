@@ -339,7 +339,7 @@ def check(filename):
     else:
         output(1, "[-] AFU signature of unsupported type: %d" % sig_type)
     
-    output(1, "[-] AFU signature type: %d" % sig_type)
+    output(1, "[+] AFU signature type: %d" % sig_type)
     
     # now decrypt the signature
     decrypted_signature = modexp(signature, 0x10001, modulus)
